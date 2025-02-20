@@ -5,4 +5,4 @@
  {:repl
   {:main-opts
    ["-m" "nrepl.cmdline"
-    "--middleware" "[spy.middleware/spy-middleware]"]}}} 
+    "--middleware" "[spy/spy-middleware]"]}}} 

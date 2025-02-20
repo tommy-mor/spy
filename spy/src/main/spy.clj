@@ -6,10 +6,15 @@
 (def active-spy (atom nil))
 
 (defmacro spy+ [bindings & body]
-  (println "here")
-  `(let [locals# (zipmap '~(take-nth 2 bindings) [(do ~@(take-nth 2 (rest bindings)))])]
-     (reset! active-spy {:ns (ns-name *ns*) :locals locals#})
-     (try ~@body (finally (reset! active-spy nil)))))
+  (let [bind-pairs (partition 2 bindings)
+        syms (map first bind-pairs)
+        vals (map second bind-pairs)]
+    `(let [locals# (into {} (map vector '~syms [~@vals]))]
+       (reset! active-spy {:ns (ns-name *ns*) :locals locals#})
+       (let [~@(mapcat (fn [[s _]] [s `(get locals# '~s)]) bind-pairs)]
+         (try 
+           ~@body 
+           (finally (reset! active-spy nil)))))))
 
 (defn inject-spy [form]
   (println "inject-spy called with form:" form)
