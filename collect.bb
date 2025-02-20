@@ -3,7 +3,7 @@
 (require '[babashka.fs :as fs]
          '[babashka.process :refer [shell]])
 
-(let [files (sort (map str (fs/glob "." "**/*.{clj,edn}")))
+(let [files (sort (map str (fs/glob "." "**/*.{clj,edn,md,txt}")))
       tree (-> (shell {:out :string} "tree" ".") :out)]
   
   ;; Write the tree structure first
