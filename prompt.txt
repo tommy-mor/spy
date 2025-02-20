@@ -1,0 +1,104 @@
+.
+├── collect.bb
+├── spy
+│   ├── deps.edn
+│   ├── readme.md
+│   └── src
+│       └── main
+│           ├── spy
+│           │   ├── core.edn
+│           │   └── middleware.clj
+│           └── spy.clj
+└── spy-test
+    ├── deps.edn
+    ├── run.sh
+    └── src
+        └── main
+            └── spy_test
+                └── core.clj
+
+9 directories, 9 files
+
+
+File contents:
+
+
+=== spy/src/main/spy.clj ===
+
+(ns spy)
+
+(def active-spy (atom nil))
+
+(defmacro spy+ [bindings & body]
+  `(let [locals# (zipmap '~(take-nth 2 bindings) [(do ~@(take-nth 2 (rest bindings)))])]
+     (reset! active-spy {:ns (ns-name *ns*) :locals locals#})
+     (try ~@body (finally (reset! active-spy nil)))))
+
+
+=== spy/src/main/spy/core.edn ===
+
+{active-spy {:args {'x 10, 'y 20, 'z 30}}
+
+
+=== spy/src/main/spy/middleware.clj ===
+
+(ns spy.middleware
+  (:require [nrepl.middleware :as mw]
+            [nrepl.misc :refer [response-for]]
+            [nrepl.transport :as t]
+            [spy :refer [active-spy]]))
+
+(defn inject-spy [form]
+  (if-let [{:keys [locals]} @active-spy]
+    `(let [~@(mapcat identity locals)] ~form)
+    form))
+
+(defn spy-middleware [h]
+  (fn [{:keys [op code transport] :as msg}]
+    (case op
+      "eval" (let [form (inject-spy (read-string code))]
+               (t/send transport (response-for msg
+                                               :status :done
+                                               :value (pr-str (eval form)))))
+      (h msg))))
+
+(mw/set-descriptor! #'spy-middleware {:expects #{"eval"}})
+
+
+=== spy-test/src/main/spy_test/core.clj ===
+
+(ns spy-test.core
+  (:require [clojure.data.json :as json]
+            [spy :refer [spy+]]))
+
+;; Example 1: Cat Facts API
+(defn get-cat-fact []
+  (-> (slurp "https://catfact.ninja/fact")
+      (json/read-str :key-fn keyword)))
+
+;; Example 2: Simple Spy Demo
+(defn spy-demo []
+  (let [x 10
+        y 20]
+    (spy+ [x x
+           y y
+           z (+ x y)]
+      (println "Inside spy+ block:")
+      (println "x =" x)
+      (println "y =" y)
+      (println "z =" z)
+      (* x y z))))
+
+;; Example 3: Fibonacci with Spy
+(defn fibonacci [n]
+  (let [x 1
+        y 1]
+    (spy+ [x x
+           y y
+           n n]
+      (loop [a x
+             b y
+             count (- n 2)]
+        (if (pos? count)
+          (recur b (+ a b) (dec count))
+          b)))))
