@@ -2,6 +2,14 @@
 
 **Spy Playground** lets you capture local variables at runtime using `spy+` and access them directly in your REPL. After calling a function wrapped with `spy+`, the variables become available for quick debugging and exploration.
 
+> In hindsight, so much of what we hype up as “exploratory programming” in the REPL is really just coping with the lack of useful type information.
+> -- [this post](https://discuss.ocaml.org/t/whats-your-development-workflow/10358/8)
+
+> It's much easier for me to generalize from the concrete than conctretize from the general.
+> -- a professor once told me
+
+> The values of a program deserve to be tracked in git, not just the source of a program.
+> -- my opinion
 ---
 
 ## How to Use
