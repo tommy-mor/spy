@@ -13,9 +13,7 @@
     `(let [~locals-sym (into {} (map vector '~syms [~@vals]))]
        (reset! spy/active-spy {:ns (ns-name *ns*) :locals ~locals-sym})
        (let [~@(mapcat (fn [[s _]] [s `(get ~locals-sym '~s)]) bind-pairs)]
-         (try 
-           ~@body 
-           (finally (reset! spy/active-spy nil)))))))
+         ~@body))))
 
 (defn inject-spy [form]
   (println "inject-spy called with form:" form)

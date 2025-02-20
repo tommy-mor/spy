@@ -7,6 +7,9 @@
   (-> (slurp "https://catfact.ninja/fact")
       (json/read-str :key-fn keyword)))
 
+(comment
+  (get-cat-fact))
+
 ;; Example 2: Simple Spy Demo
 (defn spy-demo []
   (let [x 10
@@ -20,6 +23,8 @@
              (println "y =" y)
              (println "z =" z)
              result))))
+(comment
+  (spy-demo))
 
 ;; Example 3: Fibonacci with Spy
 (defn fibonacci [n]
