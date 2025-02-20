@@ -37,4 +37,5 @@
 
 (comment
   (+ 3 3)
-  (get-cat-fact))
+  (get-cat-fact)
+  (spy-demo))

@@ -7,14 +7,11 @@
 ## How to Use
 
 1. **Start the REPL:**  
-   In the `spy-test` directory, run:  
    ```bash
-   clojure -M -m spy-test.core
+   cd spy-test
+   ./run.sh
    ```
-
 2. **Connect to the REPL:**  
-   Use your editor or connect via terminal (default port: 7888).
-
 3. **Use `spy+` in Your Code:**  
    ```clojure
    (ns spy-test.core
