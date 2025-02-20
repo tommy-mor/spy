@@ -20,6 +20,7 @@
              (println "y =" y)
              (println "z =" z)
              result))))
+
 ;; Example 3: Fibonacci with Spy
 (defn fibonacci [n]
   (let [x 1
