@@ -10,10 +10,11 @@
           [(str "\n=== Directory Structure ===\n\n"
                 (:out (shell {:out :string} "tree .")))]
           (for [file (->> (fs/glob "." "**/*")
-                  (filter fs/regular-file?)
-                  (remove #(or (str/starts-with? (str %) ".")
-                             (= (fs/file-name %) "prompt.txt")))
-                  (map str)
-                  sort)]
-  (println (str "\n=== " file " ===\n"))
-  (println (slurp file))) 
+                         (filter fs/regular-file?)
+                         (remove #(or (str/starts-with? (str %) ".")
+                                    (= (fs/file-name %) "prompt.txt")))
+                         (map str)
+                         sort)]
+            (str "\n=== " file " ===\n"
+                 (slurp file))))))
+(shell "open" "prompt.txt")
