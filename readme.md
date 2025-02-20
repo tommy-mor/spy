@@ -39,6 +39,7 @@
 
 To share the entire codebase as a single script for an LLM, run:  
 ```bash
+cd llm
 ./collect.sh > prompt.txt
 ```  
 This collects all files into `prompt.txt`—perfect for pasting into an LLM for quick analysis or debugging.
