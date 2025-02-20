@@ -1,0 +1,2 @@
+lsp-knodo integration which shows captured variables on hover
+bb script mode which checks all spy vals against their gardened serialzed value traces
