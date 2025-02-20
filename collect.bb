@@ -3,9 +3,7 @@
 (require '[babashka.fs :as fs]
          '[babashka.process :refer [shell]])
 
-(let [files (concat
-             (sort (map str (fs/glob "." "spy/**/*.{clj,edn}")))
-             (sort (map str (fs/glob "." "spy-test/**/*.{clj,edn}"))))
+(let [files (sort (map str (fs/glob "." "**/*.{clj,edn}")))
       tree (-> (shell {:out :string} "tree" ".") :out)]
   
   ;; Write the tree structure first
@@ -15,4 +13,7 @@
   (doseq [f files]
     (spit "prompt.txt"
           (format "\n=== %s ===\n\n%s\n" f (slurp f))
-          :append true))) 
+          :append true))
+  
+  ;; Open the current directory after writing is complete
+  (shell "open" "prompt.txt")) 

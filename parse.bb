@@ -9,7 +9,7 @@
     {:file file-name
      :content (str/join "\n" contents)}))
 
-(let [content (slurp "prompt.txt")
+(let [content (slurp "input.txt")
       [tree-part files-part] (str/split content #"\n\nFile contents:\n\n")
       file-sections (str/split files-part #"(?=\n===)")
       files (map parse-file-section (filter not-empty file-sections))]
