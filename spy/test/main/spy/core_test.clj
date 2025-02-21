@@ -7,55 +7,52 @@
    (let [x 10
          y 20
          z (+ x y)]
-     (is (= 10 x))
-     (is (= 20 y))
-     (is (= 30 z))
      (is (= 6000 (* x y z)))))
+  (is (= x 10))
+  (is (= y 20))
+  (is (= z 30)))
 
 
-  (deftest test-destructuring
-    (spy
-     (let [{:keys [a b]} {:a 5 :b 15}
-           sum (+ a b)]
-       (is (= 5 a))
-       (is (= 15 b))
-       (is (= 20 sum)))))
 
-  (deftest test-fn-args
-    (spy
-     ((fn [x y]
-        (is (= 7 x))
-        (is (= 3 y))
-        (+ x y))
-      7 3)))
+(deftest test-destructuring
+  (spy
+   (is (= 21 (let [{:keys [a b]} {:a 5 :b 15}
+                   sum (+ a b)]
+               (inc sum))))
+   (is (= sum 20))
+   (is (= a 5))
+   (is (= b 15))))
 
-  (deftest test-nested-lets
-    (spy
-     (let [a 1
-           b 2]
-       (let [c (+ a b)]
-         (is (= 1 a))
-         (is (= 2 b))
-         (is (= 3 c))))))
+(deftest test-fn-args
+  (spy ((fn [x y] (+ x y)) 7 3))
+  (is (= x 7))
+  (is (= y 3)))
 
-  (deftest test-redefining-core
-    (spy
-     (let [count 5]
-       (is (= 5 count)))))
+(deftest test-nested-lets
+  (spy
+   (let [a 1
+         b 2]
+     (is (nil? (resolve 'c)))
+     (let [c (+ a b)]
+       (inc c))))
+  (is (= c 3)))
 
-  (deftest test-no-leakage-outside
-    (spy
-     (let [x 100])
-    ;; After the block, `x` should still be available in REPL
-    ;; But let's check it's NOT accessible if we eval this test file alone:
-     (is (bound? (var x)))))
+(deftest test-redefining-core
+  ;; watch out 
+  (is (= (count [1 2 3]) 3))
+  
+  (spy
+   (let [count 5]
+     (is (= 5 count))))
 
-  (deftest test-return-value
-    (is (= 6
-           (spy
-            (let [x 2
-                  y 3]
-              (* x y)))))))
+  (is (thrown? Exception (count 3))))
+
+(deftest test-redefining-core
+  (spy
+   (defn test-fn [a {:keys [b c]}]
+     (+ a b c)))
+  (is (= 306 (test-fn 101 {:b 102 :c 103})))
+  (is (= 306 (+ a b c))))
 
 (defn -main []
   (run-tests 'spy.core-test))
