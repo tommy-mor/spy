@@ -1,6 +1,4 @@
-# Spy Playground
-
-**Spy Playground** lets you capture local variables at runtime using `spy+` and access them directly in your REPL. After calling a function wrapped with `spy+`, the variables become available for quick debugging and exploration.
+**spy** lets you capture local variables at runtime using `spy` and access them directly in your REPL. After calling a function wrapped with `spy`, the variables become available for quick debugging and exploration.
 
 > In hindsight, so much of what we hype up as “exploratory programming” in the REPL is really just coping with the lack of useful type information.
 > -- [this post](https://discuss.ocaml.org/t/whats-your-development-workflow/10358/8)
@@ -13,32 +11,31 @@
 ---
 
 ## How to Use
-
-1. **Start the REPL:**  
-   ```bash
-   cd spy-test
-   ./run.sh
-   ```
-2. **Connect to the REPL:**  
-3. **Use `spy+` in Your Code:**  
+1. **Use `spy+` in Your Code:**  
    ```clojure
-   (ns spy-test.core
-     (:require [spy :refer [spy+]]))
+   (require [spy.core :refer [spy]])
 
-   (defn spy-demo []
+   ;; Example 1: Simple let bindings 
+   (spy
      (let [x 10
-           y 20]
-       (spy+ [x x
-              y y
-              z (+ x y)]
-         (* x y z))))
+           y 20
+           z (+ x y)]
+       (println "x =" x)
+       (println "y =" y)
+       (println "z =" z)
+       (* x y z)))
 
-   (spy-demo) ;; => 2000
+   ;; Example 2: Destructuring
+   (spy 
+    (let [{:keys [a b]} {:a 1 :b 2}
+          sum (+ a b)]
+      (println "sum =" sum)
+      sum))
 
-   ;; Now, directly use captured variables in the REPL:
-   (+ x y)   ;; => 30
-   (* z 2)   ;; => 60
-   ```
+    ;; Now, directly use captured variables in the REPL:
+    (+ x y)   ;; => 30
+    (* z 2)   ;; => 60
+    ```
 
 ## For LLM Use
 
