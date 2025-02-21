@@ -1,7 +1,58 @@
 (ns spy
   (:require [nrepl.middleware :as mw]
             [nrepl.misc :refer [response-for]]
-            [nrepl.transport :as t]))
+            [nrepl.transport :as t]
+            [clojure.walk :as walk]))
+
+(defn should-spy? [sym]
+  (not (re-matches #"map__\d+" (str sym))))
+
+(defn inject-spy-defs [form]
+  (walk/postwalk
+   (fn [form]
+     (cond 
+       ;; Handle let* bindings
+       (and (seq? form) (= (first form) 'let*))
+       (let [bvec (second form)
+             body (drop 2 form)
+             syms (filter should-spy? (take-nth 2 bvec))
+             def-forms (map (fn [sym] `(def ~sym ~sym)) syms)]
+         `(let* ~bvec 
+            ~@def-forms
+            ~@body))
+
+       ;; Handle fn* forms
+       (and (seq? form) (= (first form) 'fn*))
+       (let [arglists (rest form)  ; List of ([args] body) pairs
+             spy-arglist (fn [[args & body]]  ; Transform each arglist
+                           (let [def-forms (map (fn [sym] `(def ~sym ~sym)) args)]
+                             `(~args ~@def-forms ~@body)))]
+         `(fn* ~@(map spy-arglist arglists)))
+
+       :else form))
+   form))
+(comment
+  (inject-spy-defs (walk/macroexpand-all 
+                    '(let [f (fn [x]
+                               (let [{:keys [a b]} {:a 3 :b 4}]
+                                 (+ a b)))]
+                       (let [z 3]
+                         (f z)))))
+  (walk/macroexpand-all 
+   '(defn foo [{:keys [a b]} m]
+      (+ a b)))
+  (def final '(let [f (fn [x]
+                        (def x x)
+                        (let [{:keys [a b]} {:a 3 :b 4}]
+                          (def a a)
+                          (def b b)
+                          (+ a b)))]
+                (def f f)
+                (let [z 3]
+                  (def z z)
+                  (f z)))))
+
+(macroexpand '(let [{:keys [a b c]} 3] x))
 
 (def active-spy (atom nil))
 
