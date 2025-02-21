@@ -1,4 +1,4 @@
-(ns spy
+(ns spy.core
   (:require [nrepl.middleware :as mw]
             [nrepl.misc :refer [response-for]]
             [nrepl.transport :as t]
