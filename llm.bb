@@ -12,9 +12,7 @@
            "\n=== readme.md ===\n"
            (slurp "readme.md")
            "\n=== llm.bb ===\n"
-           (slurp "llm.bb")
-           "\n=== plan.txt ===\n"
-           (slurp "plan.txt")]
+           (slurp "llm.bb") ]
           (for [file (->> (fs/glob "." "**/*")
                          (filter fs/regular-file?)
                          (remove #(or (str/starts-with? (str %) ".")

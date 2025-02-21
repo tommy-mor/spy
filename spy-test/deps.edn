@@ -4,5 +4,4 @@
  :aliases
  {:repl
   {:main-opts
-   ["-m" "nrepl.cmdline"
-    "--middleware" "[spy/spy-middleware]"]}}} 
+   ["-m" "nrepl.cmdline"]}}} 
