@@ -1,6 +1,6 @@
 # spy
 
-`spy` lets you capture local variables at runtime and access them directly in your REPL. Wrap a block with `spy`, and every subexpression becomes instantly evaluable—no manual debugging hacks required.
+`spy` lets you capture local variables at runtime and access them directly in your REPL. Wrap a block with `spy`, and every subexpression becomes instantly evaluable.
 
 > *"In hindsight, so much of what we hype up as 'exploratory programming' in the REPL is really just coping with the lack of useful type information."*  
 > — [this post](https://discuss.ocaml.org/t/whats-your-development-workflow/10358/8)  
@@ -12,7 +12,7 @@
 
 ## Example: Cat Facts
 
-Here’s a real-world example fetching a cat fact from an API:  
+Here's a real-world example fetching a cat fact from an API:  
 
 ```clojure
 (require '[clojure.data.json :as json])
@@ -45,7 +45,7 @@ No print statements, no manual `def`s—just instant access to every step of the
 
 ## How It Works: Before and After
 
-**spy** is a macro that transforms your code to define all local variables globally. Here’s what happens:  
+**spy** is a macro that transforms your code to define all local variables globally. Here's what happens:  
 
 ### Before (your code):  
 
@@ -78,13 +78,13 @@ After evaluation, `x`, `y`, and `z` are available in your REPL as `10`, `20`, an
 
 ## Motivation
 
-I’ve leaned on the “inline def” trick—`(def x x)`—for years to debug and develop interactively. (See great write-ups [here](https://blog.michielborkent.nl/inline-def-debugging.html) and [here](https://cognitect.com/blog/2017/6/5/repl-debugging-no-stacktrace-required).) 
+I've leaned on the "inline def" trick—`(def x x)`—for years to debug and develop interactively. (See great write-ups [here](https://blog.michielborkent.nl/inline-def-debugging.html) and [here](https://cognitect.com/blog/2017/6/5/repl-debugging-no-stacktrace-required).) 
 
-But it’s tedious:  
+But it's tedious:  
 - Manually writing `(def arg1 arg1)` for every variable is a chore.  
-- You’ve got to clean them up before committing to avoid code smell.  
+- You've got to clean them up before committing to avoid code smell.  
 
-**spy** automates this pattern, making it effortless and keeping your code clean. It’s the inline `def` hack on autopilot.  
+**spy** automates this pattern, making it effortless and keeping your code clean. It's the inline `def` hack on autopilot.  
 
 ---
 
@@ -96,7 +96,13 @@ Yes, **spy** clogs up the global namespace with `def`s—just like `(def varname
 
 ## How to Use
 
-1. **Add spy to your project** (details TBD—stick it in your `deps.edn` or copy `core.clj` for now).  
+1. **Add spy to your project** by adding this to your `deps.edn`:
+
+```clojure
+{:deps {io.github.tommy-mor/spy {:git/url "https://github.com/tommy-mor/spy"
+                                 :git/sha "COMMIT-SHA-HERE"}}}
+```
+
 2. **Require it:**  
 
 ```clojure
@@ -106,20 +112,24 @@ Yes, **spy** clogs up the global namespace with `def`s—just like `(def varname
 3. **Wrap any block:**  
 
 ```clojure
+;; instrument expression/function
 (spy
-  (let [a 5
-        b (* a 2)]
-    (+ a b)))
+   (defn test-fn [a {:keys [b c]}]
+     (+ a b c)))
+
+;; initalize values
+(test-fn 10 {:b 20 :c 30})
 ```
 
 4. **Evaluate and explore:**  
 
 ```clojure
-a ;; => 5
-b ;; => 10
-(+ a b) ;; => 15
+a ;; => 10
+b ;; => 20
+c ;; => 30
+(+ a b c) ;; => 60
 ```
 
 ## Comparison to type systems.
 
-In typed languages, you write an expression and get millisecond-level feedback like `List<Integer>`, offering instant but abstract type info. With spy, you eval once and get near-instant access to concrete values like `[1, 2, 3, 4]`—richer for exploration, though it needs that initial run. It’s an improvement over types: instead of just knowing the shape, you see the real data and can evaluate subexpressions in context immediately. Types have other benefits that spy does not have.
+In typed languages, you write an expression and get millisecond-level feedback like `List<Integer>`, offering instant but abstract type info. With spy, you eval once and get near-instant access to concrete values like `[1, 2, 3, 4]`—richer for exploration, though it needs that initial run. It's an improvement over types: instead of just knowing the shape, you see the real data and can evaluate subexpressions in context immediately. Types have other benefits that spy does not have.
