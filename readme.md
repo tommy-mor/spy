@@ -9,14 +9,6 @@
 > — a professor once told me  
 
 ---
-## Why its cool
-Clojure’s REPL shines by merging edit time and runtime, but it’s held back by slow feedback and missing type info. You load namespaces manually, rerun code to see data shapes, and lose context between runs. spy fights back:
-
-- **Direct Subexpression Evaluation:** Every variable in a spy block is instantly REPL-accessible. No copying, no printing—just type the name and see the value.
-- **Real Context:** Values come from actual runtime execution, not mocks or guesses. You’re exploring the exact state of your program, not hypothesizing about types.
-
-Compare this to type systems like OCaml: write an expression, and within milliseconds, the IDE shows its type `(int, list string)`. That’s fast—but abstract. spy gets you close to that speed with values, not types. After one eval, you don’t wonder if processed is a map—you see `{:fact "Cats have 9 lives" :length 15}` and can play with it. It’s an improvement over types: concrete, immediate, and REPL-ready.
----
 
 ## Example: Cat Facts
 
@@ -86,7 +78,7 @@ After evaluation, `x`, `y`, and `z` are available in your REPL as `10`, `20`, an
 
 ## Motivation
 
-I’ve leaned on the “inline def” trick—`(def x x)`—for years to debug and develop interactively. (See great write-ups [here](https://blog.michielborkent.nl/inline-def-debugging.html) and [here](https://cognitect.com/blog/2017/6/5/repl-debugging-no-stacktrace-required).) It’s perfect for REPL workflows: define function args inline, run a test or comment block, and send the function body to the REPL as you tweak it. Values flow through your expressions milliseconds after writing them.  
+I’ve leaned on the “inline def” trick—`(def x x)`—for years to debug and develop interactively. (See great write-ups [here](https://blog.michielborkent.nl/inline-def-debugging.html) and [here](https://cognitect.com/blog/2017/6/5/repl-debugging-no-stacktrace-required).) 
 
 But it’s tedious:  
 - Manually writing `(def arg1 arg1)` for every variable is a chore.  
@@ -130,4 +122,4 @@ b ;; => 10
 
 ## Comparison to type systems.
 
-In typed languages, you write an expression and get millisecond-level feedback like List<Integer>, offering instant but abstract type info. With spy, you eval once and get near-instant access to concrete values like [1, 2, 3, 4]—richer for exploration, though it needs that initial run. It’s an improvement over types: instead of just knowing the shape, you see the real data and can evaluate subexpressions in context immediately. Think of it as trading static safety for dynamic power, bringing Clojure’s REPL workflow tantalizingly close to type-system speed with deeper insight.
+In typed languages, you write an expression and get millisecond-level feedback like `List<Integer>`, offering instant but abstract type info. With spy, you eval once and get near-instant access to concrete values like `[1, 2, 3, 4]`—richer for exploration, though it needs that initial run. It’s an improvement over types: instead of just knowing the shape, you see the real data and can evaluate subexpressions in context immediately. Types have other benefits that spy does not have.
