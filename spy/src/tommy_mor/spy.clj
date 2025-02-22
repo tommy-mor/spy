@@ -31,6 +31,10 @@
   (let [expanded (walk/macroexpand-all `(do ~@body))]
     (inject-spy-defs expanded)))
 
+(defn unspy []
+  (doseq [[s _] (ns-interns *ns*)]
+    (ns-unmap *ns* s)))
+
 ;; Test examples:
 (comment
   ;; Example 1: Simple let bindings 
