@@ -1,6 +1,6 @@
-(ns spy.core-test
+(ns tommy-mor.spy-test
   (:require [clojure.test :refer :all]
-            [spy.core :refer [spy]]))
+            [tommy-mor.spy :refer [spy]]))
 
 (deftest test-simple-let
   (spy
@@ -55,4 +55,4 @@
   (is (= 306 (+ a b c))))
 
 (defn -main []
-  (run-tests 'spy.core-test))
+  (run-tests 'tommy-mor.spy-test))

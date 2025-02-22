@@ -1,1 +1,1 @@
-clj -M -m spy.core-test
+clj -M:test -m tommy-mor.spy-test

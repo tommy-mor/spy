@@ -1,4 +1,4 @@
-(ns spy.core
+(ns tommy-mor.spy
   (:require [clojure.walk :as walk]))
 
 (defn should-spy? [sym]

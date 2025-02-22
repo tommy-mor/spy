@@ -96,17 +96,18 @@ Yes, **spy** clogs up the global namespace with `def`s—just like `(def varname
 
 ## How to Use
 
-1. **Add spy to your project** by adding this to your `deps.edn`:
+1. **Add spy to your project** by adding this to your `deps.edn`
 
 ```clojure
-{:deps {io.github.tommy-mor/spy {:git/url "https://github.com/tommy-mor/spy"
-                                 :git/sha "COMMIT-SHA-HERE"}}}
+{:deps {io.github.tommy-mor/spy {:git/sha "COMMIT-SHA-HERE" :deps/root "spy"}}}
 ```
+
+or, copy the code directly into your `user.clj`, its only 30 lines.
 
 2. **Require it:**  
 
 ```clojure
-(require '[spy.core :refer [spy]])
+(require '[tommy-mor.spy :refer [spy]])
 ```
 
 3. **Wrap any block:**  

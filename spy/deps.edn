@@ -1,4 +1,4 @@
-{:paths ["src/main" "test/main"]
+{:paths ["src"]
  :deps {}
  :aliases
- {:test {:extra-paths ["test/main"]}}}
+ {:test {:extra-paths ["test"]}}}
