@@ -138,3 +138,12 @@
   [n]
   {:name n
    :match identity})
+
+(defn absent
+  "Passes when the sub-step matches NOTHING. Keeps all elements unchanged."
+  [step]
+  {:name (str "absent(" (:name step) ")")
+   :match (fn [els]
+            (if (empty? ((:match step) els))
+              els
+              []))})
