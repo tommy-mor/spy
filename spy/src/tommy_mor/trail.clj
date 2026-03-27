@@ -24,12 +24,11 @@
                                 (mapv :name remaining) ")")))})))))
 
 ;; Convenience: validate multiple paths, collect failures
-(defn validate-all [specs els]
-  (keep (fn [[spec-name path]]
+(defn validate-all [paths els]
+  (keep (fn [path]
           (let [result (validate path els)]
-            (when (:fail result)
-              (assoc result :spec spec-name))))
-        specs))
+            (when (:fail result) result)))
+        paths))
 
 ;; -- Filter navigators --
 
@@ -131,3 +130,11 @@
             (filter (fn [el]
                       (not-any? #(seq ((:match %) [el])) steps))
                     els))})
+
+;; -- Annotation navigators --
+
+(defn label
+  "Passthrough navigator that adds a name to the trail without filtering."
+  [n]
+  {:name n
+   :match identity})

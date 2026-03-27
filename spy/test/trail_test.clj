@@ -130,15 +130,32 @@
     (is (= 4 (count (:matched result))))
     (is (not-any? #(#{"listitem" "checkbox"} (:role %)) (:matched result)))))
 
-;; 7. validate-all — multiple specs, collect only failures
+;; 7. validate-all — multiple paths, collect only failures
 
 (deftest test-validate-all
-  (let [specs [[:has-textbox [(t/role "textbox") (t/count= 1)]]
-               [:has-dialog [(t/role "dialog")]]
-               [:has-listitems [(t/role "listitem") (t/count= 2)]]]
-        failures (t/validate-all specs snap)]
+  (let [paths [[(t/role "textbox") (t/count= 1)]
+               [(t/role "dialog")]
+               [(t/role "listitem") (t/count= 2)]]
+        failures (t/validate-all paths snap)]
     (is (= 1 (count failures)))
-    (is (= :has-dialog (:spec (first failures))))))
+    (is (= ["role(dialog)"] (:fail (first failures))))))
+
+;; 7b. label navigator
+
+(deftest test-label
+  (testing "label passes through without filtering"
+    (let [result (t/validate [(t/label "setup") (t/role "listitem")] snap)]
+      (is (:ok result))
+      (is (= 2 (count (:matched result))))))
+  (testing "label appears in trail on failure"
+    (let [result (t/validate [(t/label "after adding") (t/role "dialog")] snap)]
+      (is (:fail result))
+      (is (= ["after adding" "role(dialog)"] (:fail result)))
+      (is (clojure.string/includes? (:message result) "after adding > role(dialog)"))))
+  (testing "label at end of path"
+    (let [result (t/validate [(t/role "listitem") (t/label "should have 5")] snap)]
+      (is (:ok result))
+      (is (= ["role(listitem)" "should have 5"] (:ok result))))))
 
 ;; 8. Edge cases
 
