@@ -1,120 +1,96 @@
 (ns spy
   (:require [clojure.walk :as walk]))
 
-(def ^:dynamic *spy-bindings* (atom {}))
+;; The spy namespace IS the store. Values are intern'd here as vars.
+;; Access them as spy/x, spy/result, etc. No atoms, no helpers.
 
-(defn should-spy?
-  "Predicate to determine if a symbol should be spied upon."
-  [sym]
+(defn should-spy? [sym]
   (and (symbol? sym)
        (not= '& sym)
        (not (re-matches #"map__\d+|&" (str sym)))))
 
-(defn- bound-symbols
-  "Return a sequence of all valid symbol nodes inside a binding form (e.g., arg vector)."
-  [binding]
-  (let [acc (atom [])]
-    (walk/postwalk
-     (fn [x]
-       (when (should-spy? x)
-         (swap! acc conj x))
-       x)
-     binding)
-    (distinct @acc)))
-
-(defn- extract-binding-symbols
-  "Given a let binding vector, return the collection of symbols bound by it."
-  [bvec]
-  (let [xform (comp (mapcat (fn [[binding _expr]] (bound-symbols binding)))
-                    (distinct))]
-    (sequence xform (partition 2 bvec))))
-
-(defn inject-spy-defs
-  "Walk the form and inject swap! calls into let bindings and function arguments."
+(defn inject-spy-interns
+  "Walk form, inject (intern 'spy 'sym sym) for let bindings and fn args."
   [form]
   (walk/postwalk
    (fn [f]
      (cond
-       ;; instrument defn / fn / fn*
-       ;; Matches any function definition form.
-       (and (seq? f)
-            (#{'fn 'fn* 'defn 'defn-} (first f)))
-       (let [;; A defn form might have a name, but a fn form does not.
-             name? (when (symbol? (second f)) (second f))
-             ;; A function can have multiple arities (bodies). This logic handles both single- and multi-arity functions.
-             bodies (if (vector? (if name? (nth f 2) (second f)))
-                      [(drop (if name? 2 1) f)]
-                      (if name? (drop 2 f) (rest f)))
-             ;; We process each arity (body) separately.
-             new-bodies
-             (map (fn [body]
-                    (let [args (first body)
-                          body-forms (rest body)
-                          ;; Get all the symbols from the argument vector, including those in destructuring.
-                          syms (bound-symbols args)
-                          ;; For each symbol, create a form that will update our spy atom.
-                          spy-forms (map (fn [s] `(swap! *spy-bindings* assoc '~s ~s)) syms)]
-                      ;; We reconstruct the function body. We wrap the original body in a `let` block.
-                      ;; This is crucial because it ensures that any destructuring in the argument vector
-                      ;; has already happened before we try to access the symbols to spy on them.
-                      `(~args
-                        (let [~@(mapcat (fn [s] [s s]) syms)]
-                          ~@spy-forms
-                          (do ~@body-forms)))))
-                  bodies)]
-         ;; Reconstruct the final function form with the new, instrumented bodies.
-         (if name?
-           `(~(first f) ~name? ~@new-bodies)
-           `(~(first f) ~@new-bodies)))
-
-       ;; instrument let / let*
-       ;; Matches let and let* forms.
+        ;; let / let*
        (and (seq? f) (#{'let 'let*} (first f)))
        (let [bvec (second f)
              body (drop 2 f)
-             ;; Get all the symbols from the binding vector.
-             syms (extract-binding-symbols bvec)
-             ;; For each symbol, create a form that will update our spy atom.
-             spy-forms (map (fn [sym]
-                              `(swap! *spy-bindings* assoc '~sym ~sym))
-                            syms)]
-         ;; We use let* to ensure that bindings are available sequentially, which is important for correctness.
-         ;; The spy forms are inserted after the binding vector, so they have access to the bound values.
+             syms (->> (partition 2 bvec)
+                       (mapcat (fn [[binding _]]
+                                 (let [acc (atom [])]
+                                   (walk/postwalk
+                                    (fn [x] (when (should-spy? x) (swap! acc conj x)) x)
+                                    binding)
+                                   (distinct @acc)))))]
          `(let* ~bvec
-                ~@spy-forms
-                ~@body))
+            ~@(map (fn [s] `(intern '~'spy '~s ~s)) syms)
+            ~@body))
+
+        ;; fn / fn* / defn / defn-
+       (and (seq? f) (#{'fn 'fn* 'defn 'defn-} (first f)))
+       (let [named? (symbol? (second f))
+             bodies (let [rst (if named? (drop 2 f) (rest f))]
+                      (if (vector? (first rst)) [rst] rst))]
+         `(~(first f)
+           ~@(when named? [(second f)])
+           ~@(map (fn [[args & body]]
+                    (let [syms (let [acc (atom [])]
+                                 (walk/postwalk
+                                  (fn [x] (when (should-spy? x) (swap! acc conj x)) x)
+                                  args)
+                                 (distinct @acc))]
+                      `(~args
+                        (let [~@(mapcat (fn [s] [s s]) syms)]
+                          ~@(map (fn [s] `(intern '~'spy '~s ~s)) syms)
+                          (do ~@body)))))
+                  bodies)))
 
        :else f))
    form))
 
-(defmacro spy [& body]
-  (let [expanded (walk/macroexpand-all `(do ~@body))]
-    (inject-spy-defs expanded)))
+(defmacro spy
+  "Wrap code so all let bindings and fn args are intern'd into the spy namespace.
+   Access values as spy/x, spy/result, etc."
+  [& body]
+  (inject-spy-interns (walk/macroexpand-all `(do ~@body))))
 
-(defn unspy
-  "Resets all spy bindings."
+(defn spy!
+  "Instrument all fns in the current namespace. On each call, args and return value
+   are intern'd into spy. Access as spy/argname, spy/fnname<."
   []
-  (reset! *spy-bindings* {}))
+  (let [target-ns *ns*]
+    (doseq [[sym v] (ns-interns target-ns)
+            :when (and (fn? @v) (not (:macro (meta v))))]
+      (let [original @v
+            arg-names (first (:arglists (meta v)))]
+        (alter-var-root v
+                        (fn [f]
+                          (fn [& args]
+                            (doseq [[n val] (map vector (or arg-names (range)) args)]
+                              (intern 'spy (if (symbol? n) n (symbol (str "arg" n))) val))
+                            (let [result (apply f args)]
+                              (intern 'spy (symbol (str sym "<")) result)
+                              result))))
+        (alter-meta! v assoc ::original original)))))
 
-(defn spy-val
-  "Retrieves the value of a spied symbol."
-  [sym]
-  (get @*spy-bindings* sym))
+(defn unspy!
+  "De-instrument all fns in current namespace. Captured values stay in spy ns for inspection."
+  []
+  (doseq [[sym v] (ns-interns *ns*)
+          :when (::original (meta v))]
+    (alter-var-root v (constantly (::original (meta v))))
+    (alter-meta! v dissoc ::original)))
 
-(defn spy-runtime
-  "Dynamically instruments and redefines a var from a string or list.
-  Crucially, it redefines the var in its original namespace."
-  [var-symbol form-or-str]
-  (let [form (if (string? form-or-str)
-               (read-string form-or-str)
-               form-or-str)
-        ;; Resolve the namespace from the target symbol
-        target-ns (find-ns (symbol (namespace var-symbol)))
-        _ (when-not target-ns
-            (throw (IllegalArgumentException.
-                    (str "Namespace not found for symbol: " var-symbol))))
-        expanded (walk/macroexpand-all form)
-        injected (inject-spy-defs expanded)]
-    ;; Bind *ns* to the target namespace before calling eval.
-    (binding [*ns* target-ns]
-      (eval injected))))
+(def ^:private spy-own-syms
+  #{'should-spy? 'inject-spy-interns 'spy 'spy! 'unspy! 'clear! 'spy-own-syms})
+
+(defn clear!
+  "Wipe all captured values from the spy namespace."
+  []
+  (doseq [[sym _] (ns-interns 'spy)
+          :when (not (spy-own-syms sym))]
+    (ns-unmap 'spy sym)))
