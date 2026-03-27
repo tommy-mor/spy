@@ -12,8 +12,6 @@
   (is (= y 20))
   (is (= z 30)))
 
-
-
 (deftest test-destructuring
   (spy
    (is (= 21 (let [{:keys [a b]} {:a 5 :b 15}
@@ -40,7 +38,7 @@
 (deftest test-redefining-core
   ;; watch out 
   (is (= (count [1 2 3]) 3))
-  
+
   (spy
    (let [count 5]
      (is (= 5 count))))
@@ -53,6 +51,15 @@
      (+ a b c)))
   (is (= 306 (test-fn 101 {:b 102 :c 103})))
   (is (= 306 (+ a b c))))
+
+(deftest test-anonymous-fn
+  ;; #() shorthand macroexpands to flat (fn* [args] body), not multi-arity form
+  ;; spy should handle both without ClassCastException
+  (let [nums [1 2 3]
+        doubled (map #(* 2 %) nums)]
+    (spy
+     (let [result (filter #(> % 3) doubled)]
+       (is (= (list 4 6) result))))))
 
 (defn -main []
   (run-tests 'tommy-mor.spy-test))
