@@ -27,7 +27,7 @@
   (interactive)
   (let* ((sym (thing-at-point 'symbol t))
          (val (cider-nrepl-sync-request:eval
-               (format "(spy/spy-val '%s)" sym)))
+               (format "(when-let [v (ns-resolve 'spy '%s)] (var-get v))" sym)))
          (text (nrepl-dict-get val "value"))
          (ov (make-overlay (line-end-position) (line-end-position))))
     (overlay-put ov 'after-string
@@ -113,7 +113,7 @@
   (if arg
       ;; C-u prefix → unspy all global state
       (progn
-        (cider-nrepl-sync-request:eval "(spy/unspy)")
+        (cider-nrepl-sync-request:eval "(spy/clear!)")
         (mapc #'delete-overlay clojure-spy-top-overlays)
         (setq clojure-spy-top-overlays nil)
         (message "Unspy all successful"))

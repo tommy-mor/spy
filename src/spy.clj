@@ -86,7 +86,23 @@
     (alter-meta! v dissoc ::original)))
 
 (def ^:private spy-own-syms
-  #{'should-spy? 'inject-spy-interns 'spy 'spy! 'unspy! 'clear! 'spy-own-syms})
+  #{'should-spy? 'inject-spy-interns 'spy 'spy! 'unspy! 'clear! 'spy-own-syms 'spy-runtime})
+
+(defn spy-runtime
+  "Dynamically instruments and redefines a var from a string or list.
+  Redefines the var in its original namespace."
+  [var-symbol form-or-str]
+  (let [form (if (string? form-or-str)
+               (read-string form-or-str)
+               form-or-str)
+        target-ns (find-ns (symbol (namespace var-symbol)))
+        _ (when-not target-ns
+            (throw (IllegalArgumentException.
+                    (str "Namespace not found for symbol: " var-symbol))))
+        expanded (walk/macroexpand-all form)
+        injected (inject-spy-interns expanded)]
+    (binding [*ns* target-ns]
+      (eval injected))))
 
 (defn clear!
   "Wipe all captured values from the spy namespace."

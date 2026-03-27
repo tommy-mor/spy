@@ -1,19 +1,23 @@
 (ns spy-test
   (:require [clojure.test :refer :all]
-            [spy :refer [spy spy-val unspy]]))
+            [spy :refer [spy clear!]]))
+
+(defn spy-val [sym]
+  (when-let [v (ns-resolve 'spy sym)]
+    (var-get v)))
 
 (deftest test-simple-let
   (spy (let [x 10 y 20 z (+ x y)] z))
   (is (= (spy-val 'x) 10))
   (is (= (spy-val 'y) 20))
   (is (= (spy-val 'z) 30))
-  (unspy))
+  (clear!))
 
 (deftest test-fn-args
   (spy ((fn [x y] (+ x y)) 7 3))
   (is (= (spy-val 'x) 7))
   (is (= (spy-val 'y) 3))
-  (unspy))
+  (clear!))
 
 (deftest test-anonymous-fn
   ;; #() shorthand — flat (fn* [args] body), not multi-arity form
@@ -22,7 +26,7 @@
          doubled))
   (is (= (spy-val 'nums) [1 2 3]))
   (is (= (spy-val 'doubled) [2 4 6]))
-  (unspy))
+  (clear!))
 
 (deftest test-destructuring
   (spy (let [{:keys [a b]} {:a 5 :b 15}
@@ -31,6 +35,6 @@
   (is (= (spy-val 'a) 5))
   (is (= (spy-val 'b) 15))
   (is (= (spy-val 'sum) 20))
-  (unspy))
+  (clear!))
 
 (defn -main [] (run-tests 'spy-test))
